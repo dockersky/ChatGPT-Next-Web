@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { memo, useState, useRef, useEffect, useLayoutEffect } from "react";
 
@@ -57,7 +56,7 @@ import chatStyle from "./chat.module.scss";
 
 import { Input, Modal, showModal } from "./ui-lib";
 import { useNavigate } from "react-router-dom";
-import { GET_USER_PROMPT, Path } from "../constant";
+import { Path } from "../constant";
 
 const Markdown = dynamic(
   async () => memo((await import("./markdown")).Markdown),
@@ -450,20 +449,9 @@ export function Chat() {
 
   // prompt hints
   const promptStore = usePromptStore();
-  const userPrompts = promptStore.getUserPrompts();
-
   const [promptHints, setPromptHints] = useState<Prompt[]>([]);
   const onSearch = useDebouncedCallback(
     (text: string) => {
-      const list = promptStore.search(text);
-      // const newList = list.map((item) => {
-      //   for (let i = 0; i < userPrompts.length; i++) {
-      //     if (item.id !== userPrompts[i].id) {
-      //       return item
-      //     }
-      //   }
-      // })
-      // console.log([...userPrompts, ...newList], "+++++++===>userPrompts");
       setPromptHints(promptStore.search(text));
     },
     100,
@@ -496,36 +484,13 @@ export function Chat() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(measure, [userInput]);
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const signature = urlParams.get("signature") || "";
-    const url = `${GET_USER_PROMPT}?signature=${window.encodeURIComponent(
-      `${signature}`,
-    )}`;
-    fetch(url, {
-      method: "get",
-      credentials: "include",
-    })
-      .then((res: Response) => res.json())
-      .then((res) => {
-        const prompts = res.data.reverse();
-        if (JSON.stringify(prompts) !== JSON.stringify(userPrompts)) {
-          promptStore.remove();
-          for (let i = 0; i < prompts.length; i++) {
-            promptStore.add(prompts[i]);
-          }
-        }
-      })
-      .catch(() => {
-        console.log("请求错误");
-      });
-  }, []);
 
   // only search prompts when user input is short
   const SEARCH_TEXT_LIMIT = 30;
   const onInput = (text: string) => {
     setUserInput(text);
     const n = text.trim().length;
+
     // clear search results
     if (n === 0) {
       setPromptHints([]);
@@ -533,7 +498,6 @@ export function Chat() {
       // check if need to trigger auto completion
       if (text.startsWith("/")) {
         let searchText = text.slice(1);
-        console.log("=====>", text);
         onSearch(searchText);
       }
     }
