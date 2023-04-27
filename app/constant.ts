@@ -6,8 +6,8 @@ export const UPDATE_URL = `${REPO_URL}#keep-updated`;
 export const FETCH_COMMIT_URL = `https://api.github.com/repos/${OWNER}/${REPO}/commits?per_page=1`;
 export const FETCH_TAG_URL = `https://api.github.com/repos/${OWNER}/${REPO}/tags?per_page=1`;
 export const RUNTIME_CONFIG_DOM = "danger-runtime-config";
-export const ADD_EDIT_PROMPT = "http://uc.zhiketong.net/api/add_edit_prompt/";
-export const GET_USER_PROMPT = "http://uc.zhiketong.net/api/get_user_prompt/";
+export const ADD_EDIT_PROMPT = "https://uc.zhiketong.net/api/add_edit_prompt/";
+export const GET_USER_PROMPT = "https://uc.zhiketong.net/api/get_user_prompt/";
 
 export enum Path {
   Home = "/",
