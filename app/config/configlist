@@ -1,4 +1,5 @@
 export const CONFIG_LIST = {
+  en:["",""]
   cn: [
     [
       "充当 Linux 终端",
