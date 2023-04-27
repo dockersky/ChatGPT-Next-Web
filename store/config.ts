@@ -133,3 +133,24 @@ export const useAppConfig = create<ChatConfigStore>()(
     },
   ),
 );
+let timeoutId: any;
+export const addEditPrompt = (
+  prompts: { [s: string]: unknown } | ArrayLike<unknown>,
+  ADD_EDIT_PROMPTS: string,
+) => {
+  const setTimeoutfn = () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      fetch(ADD_EDIT_PROMPTS, {
+        method: "post",
+        credentials: "include",
+        body: JSON.stringify(Object.values(prompts)),
+      })
+        .then((res: Response) => res.json())
+        .then((res) => {
+          console.log(res);
+        });
+    }, 1000);
+  };
+  setTimeoutfn();
+};

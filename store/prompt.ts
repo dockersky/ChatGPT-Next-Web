@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Fuse from "fuse.js";
 import { getLang } from "../locales";
+import { addEditPrompt } from "./config";
+import { ADD_EDIT_PROMPT, GET_USER_PROMPT } from "../constant";
+import { CONFIG_LIST } from "../config/configlist";
 
 export interface Prompt {
   id?: number;
@@ -16,7 +19,7 @@ export interface PromptStore {
   prompts: Record<number, Prompt>;
 
   add: (prompt: Prompt) => number;
-  remove: (id: number) => void;
+  remove: (id?: number) => void;
   search: (text: string) => Prompt[];
 
   getUserPrompts: () => Prompt[];
@@ -82,19 +85,31 @@ export const usePromptStore = create<PromptStore>()(
         return prompt.id!;
       },
 
-      remove(id) {
-        const prompts = get().prompts;
-        delete prompts[id];
-        SearchService.remove(id);
-
-        set(() => ({
-          prompts,
-          counter: get().counter + 1,
-        }));
+      remove(id: any) {
+        if (!id) {
+          set(() => ({
+            prompts: {},
+            counter: get().counter + 1,
+          }));
+        } else {
+          const prompts = get().prompts;
+          delete prompts[id];
+          SearchService.remove(id);
+          set(() => ({
+            prompts,
+            counter: get().counter + 1,
+          }));
+          const urlParams = new URLSearchParams(window.location.search);
+          const signature = urlParams.get("signature") || "";
+          const url = `${ADD_EDIT_PROMPT}?signature=${window.encodeURIComponent(
+            `${signature}`,
+          )}`;
+          addEditPrompt(prompts, url);
+        }
       },
 
       getUserPrompts() {
-        const userPrompts = Object.values(get().prompts ?? {});
+        let userPrompts = Object.values(get().prompts ?? {});
         userPrompts.sort((a, b) => (b.id && a.id ? b.id - a.id : 0));
         return userPrompts;
       },
@@ -111,12 +126,17 @@ export const usePromptStore = create<PromptStore>()(
         const prompts = get().prompts;
         prompts[id] = prompt;
         set(() => ({ prompts }));
+        const urlParams = new URLSearchParams(window.location.search);
+        const signature = urlParams.get("signature") || "";
+        const url = `${ADD_EDIT_PROMPT}?signature=${window.encodeURIComponent(
+          `${signature}`,
+        )}`;
+        addEditPrompt(prompts, url);
         SearchService.add(prompt);
       },
 
       search(text) {
         if (text.length === 0) {
-          // return all rompts
           return SearchService.allPrompts.concat([...get().getUserPrompts()]);
         }
         return SearchService.search(text) as Prompt[];
@@ -130,35 +150,35 @@ export const usePromptStore = create<PromptStore>()(
 
         type PromptList = Array<[string, string]>;
 
-        fetch(PROMPT_URL)
-          .then((res) => res.json())
-          .then((res) => {
-            let fetchPrompts = [res.en, res.cn];
-            if (getLang() === "cn") {
-              fetchPrompts = fetchPrompts.reverse();
-            }
-            const builtinPrompts = fetchPrompts.map(
-              (promptList: PromptList) => {
-                return promptList.map(
-                  ([title, content]) =>
-                    ({
-                      id: Math.random(),
-                      title,
-                      content,
-                    } as Prompt),
-                );
-              },
+        // fetch(PROMPT_URL)
+        //   .then((res) => res.json())
+        //   .then((res) => {
+        //     console.log(res,'=====>res');
+        window.setTimeout(() => {
+          const res = CONFIG_LIST;
+          let fetchPrompts = [res.en, res.cn];
+          if (getLang() === "cn") {
+            fetchPrompts = fetchPrompts.reverse();
+          }
+          const builtinPrompts = fetchPrompts.map((promptList) => {
+            return promptList.map(
+              ([title, content]) =>
+                ({
+                  id: Math.random(),
+                  title,
+                  content,
+                } as Prompt),
             );
-
-            const userPrompts =
-              usePromptStore.getState().getUserPrompts() ?? [];
-
-            const allPromptsForSearch = builtinPrompts
-              .reduce((pre, cur) => pre.concat(cur), [])
-              .filter((v) => !!v.title && !!v.content);
-            SearchService.count.builtin = res.en.length + res.cn.length;
-            SearchService.init(allPromptsForSearch, userPrompts);
           });
+
+          const userPrompts = usePromptStore.getState().getUserPrompts() ?? [];
+          const allPromptsForSearch = builtinPrompts
+            .reduce((pre, cur) => pre.concat(cur), [])
+            .filter((v) => !!v.title && !!v.content);
+          SearchService.count.builtin = res.en.length + res.cn.length;
+          SearchService.init(allPromptsForSearch, userPrompts);
+        }, 0);
+        // });
       },
     },
   ),

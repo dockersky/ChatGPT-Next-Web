@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo, HTMLProps, useRef } from "react";
 
 import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
@@ -30,7 +31,7 @@ import { Avatar } from "./chat";
 import Locale, { AllLangs, changeLang, getLang } from "../locales";
 import { copyToClipboard, getEmojiUrl } from "../utils";
 import Link from "next/link";
-import { Path, UPDATE_URL } from "../constant";
+import { GET_USER_PROMPT, Path, UPDATE_URL } from "../constant";
 import { Prompt, SearchService, usePromptStore } from "../store/prompt";
 import { ErrorBoundary } from "./error";
 import { InputRange } from "./input-range";
@@ -53,6 +54,31 @@ function UserPromptModal(props: { onClose?: () => void }) {
       setSearchPrompts([]);
     }
   }, [searchInput]);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const signature = urlParams.get("signature") || "";
+    const url = `${GET_USER_PROMPT}?signature=${window.encodeURIComponent(
+      `${signature}`,
+    )}`;
+    fetch(url, {
+      method: "get",
+      credentials: "include",
+    })
+      .then((res: Response) => res.json())
+      .then((res) => {
+        const prompts = res.data.reverse();
+        console.log(prompts, userPrompts);
+        if (JSON.stringify(prompts) !== JSON.stringify(userPrompts)) {
+          promptStore.remove();
+          for (let i = 0; i < prompts.length; i++) {
+            promptStore.add(prompts[i]);
+          }
+        }
+      })
+      .catch(() => {
+        console.log("请求错误");
+      });
+  }, []);
 
   return (
     <div className="modal-mask">
@@ -142,6 +168,7 @@ function SettingItem(props: {
   subTitle?: string;
   children: JSX.Element;
 }) {
+  console.log(props.subTitle, "=====>props.subTitle");
   return (
     <ListItem>
       <div className={styles["settings-title"]}>
